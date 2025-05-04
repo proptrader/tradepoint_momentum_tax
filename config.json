@@ -1,0 +1,6 @@
+{
+    "initial_capital": 2000000,
+    "max_stocks": 20,
+    "input_dir": "input",
+    "output_dir": "output"
+} 
