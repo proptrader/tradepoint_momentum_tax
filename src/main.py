@@ -153,21 +153,23 @@ def process_portfolio(input_file: str, config_file: str = None,
     # Process trades
     results = processor.process_trades(trades)
     
-    # Generate output file
-    output_file = save_trade_history(
+    # Generate output files
+    output_files = save_trade_history(
         results["processed_trades"], 
         results["corpus_history"], 
         input_file
     )
     
-    logging.info(f"Output written to {output_file}")
+    logging.info(f"Tax output written to {output_files['tax_output']}")
+    logging.info(f"Summary output written to {output_files['summary_output']}")
     
     # Return results
     return {
         "processed_trades_count": len(results["processed_trades"]),
         "final_corpus": float(results["final_corpus"]),
         "holdings_count": results["holdings_count"],
-        "output_file": output_file
+        "tax_output_file": output_files['tax_output'],
+        "summary_output_file": output_files['summary_output']
     }
 
 
@@ -201,7 +203,8 @@ def main() -> int:
         print(f"Processed {results['processed_trades_count']} trades")
         print(f"Final corpus: {results['final_corpus']}")
         print(f"Final holdings: {results['holdings_count']}")
-        print(f"Output file: {results['output_file']}")
+        print(f"Tax output file: {results['tax_output_file']}")
+        print(f"Summary output file: {results['summary_output_file']}")
         
         return 0
         

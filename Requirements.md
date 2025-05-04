@@ -95,6 +95,14 @@ The system operates independently, reading input data from CSV files and generat
   - ST/LT (indicating whether the trade was short-term or long-term)
   - Tax
   - Corpus available
+- **FR-6.5**: The system shall generate summary CSV files that show profit after tax by month.
+- **FR-6.6**: Summary filenames shall be prefixed with "summary-" followed by the input filename.
+- **FR-6.7**: Summary files shall contain the following structure:
+  - Years as rows
+  - Months (Jan through Dec) as columns
+  - A "Total" column for yearly totals
+  - Each cell shall contain the post-tax profit (PNL - Tax) for that month/year
+- **FR-6.8**: The system shall use the generated "tax-" prefixed output files as input for creating the summary files.
 
 ## 4. Non-Functional Requirements
 

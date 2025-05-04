@@ -4,10 +4,12 @@ Output generator module for creating CSV output files.
 
 import csv
 import os
-from typing import List, Dict, Any
+import calendar
+from typing import List, Dict, Any, Set
 from pathlib import Path
 from datetime import datetime
 from decimal import Decimal
+import pandas as pd
 
 from ..models.trade import Trade
 from ..config.config import get_config
@@ -41,6 +43,21 @@ def generate_output_filename(input_filename: str) -> str:
     # Get just the base filename without extension
     base_name = os.path.splitext(os.path.basename(input_filename))[0]
     return f"tax-{base_name}.csv"
+
+
+def generate_summary_filename(input_filename: str) -> str:
+    """
+    Generate the summary filename based on the input filename.
+
+    Args:
+        input_filename: Name of the input file
+
+    Returns:
+        Summary filename
+    """
+    # Get just the base filename without extension
+    base_name = os.path.splitext(os.path.basename(input_filename))[0]
+    return f"summary-{base_name}.csv"
 
 
 def create_output_file(trades: List[Trade], input_file_path: str) -> str:
@@ -119,7 +136,74 @@ def create_output_file(trades: List[Trade], input_file_path: str) -> str:
     return output_file_path
 
 
-def save_trade_history(trades: List[Trade], corpus_history: Dict[datetime, Decimal], input_file_path: str) -> str:
+def create_summary_file(tax_output_path: str) -> str:
+    """
+    Create a summary CSV file showing profit after tax by month and year.
+    
+    Args:
+        tax_output_path: Path to the tax output file
+        
+    Returns:
+        Path to the created summary file
+    """
+    # Read the tax output file using pandas
+    df = pd.read_csv(tax_output_path)
+    
+    # Convert Exit date to datetime
+    df['Exit date'] = pd.to_datetime(df['Exit date'], format='%d-%b-%y')
+    
+    # Extract year and month from Exit date
+    df['Year'] = df['Exit date'].dt.year
+    df['Month'] = df['Exit date'].dt.month
+    
+    # Calculate profit after tax (PNL - Tax)
+    df['Profit After Tax'] = df['PNL'] - df['Tax']
+    
+    # Group by year and month and sum the profit after tax
+    monthly_profit = df.groupby(['Year', 'Month'])['Profit After Tax'].sum().reset_index()
+    
+    # Create a pivot table with years as rows and months as columns
+    pivot_table = monthly_profit.pivot_table(
+        index='Year', 
+        columns='Month', 
+        values='Profit After Tax',
+        fill_value=0
+    )
+    
+    # Rename month columns to month names
+    month_names = {
+        i: name[:3] for i, name in enumerate(calendar.month_name) if i > 0
+    }
+    pivot_table = pivot_table.rename(columns=month_names)
+    
+    # Make sure all months are present, even if there's no data
+    for month in ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']:
+        if month not in pivot_table.columns:
+            pivot_table[month] = 0
+    
+    # Reorder columns by month
+    month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    pivot_table = pivot_table[month_order]
+    
+    # Calculate row totals
+    pivot_table['Total'] = pivot_table.sum(axis=1)
+    
+    # Reset index to make Year a column
+    pivot_table = pivot_table.reset_index()
+    
+    # Generate the summary output path
+    output_dir = os.path.dirname(tax_output_path)
+    input_filename = os.path.basename(tax_output_path).replace('tax-', '')
+    summary_filename = generate_summary_filename(input_filename)
+    summary_path = os.path.join(output_dir, summary_filename)
+    
+    # Save the pivot table to CSV
+    pivot_table.to_csv(summary_path, index=False, float_format='%.2f')
+    
+    return summary_path
+
+
+def save_trade_history(trades: List[Trade], corpus_history: Dict[datetime, Decimal], input_file_path: str) -> Dict[str, str]:
     """
     Save the complete trade history with corpus information.
 
@@ -129,12 +213,20 @@ def save_trade_history(trades: List[Trade], corpus_history: Dict[datetime, Decim
         input_file_path: Path to the input file
 
     Returns:
-        Path to the created output file
+        Dictionary with paths to the created output files
     """
     # First, ensure each trade has the corpus available at its exit
     for trade in trades:
         if trade.exit_date and trade.exit_date.date() in corpus_history:
             trade.corpus_available = corpus_history[trade.exit_date.date()]
     
-    # Generate the output file
-    return create_output_file(trades, input_file_path) 
+    # Generate the tax output file
+    tax_output_path = create_output_file(trades, input_file_path)
+    
+    # Generate the summary file
+    summary_output_path = create_summary_file(tax_output_path)
+    
+    return {
+        "tax_output": tax_output_path,
+        "summary_output": summary_output_path
+    } 

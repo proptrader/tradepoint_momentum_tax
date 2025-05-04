@@ -52,32 +52,44 @@ We need to build a system that manages a portfolio of stocks, tracks trades, cal
    - Ensure proper naming convention (tax-{input_filename})
    - Success criteria: Properly formatted output files with all required columns
 
-7. **Testing and Validation**
+7. **Monthly Summary Report Generation**
+   - Create a function to generate a summary CSV report from the tax output file
+   - Implement the report structure with months as columns and years as rows
+   - Calculate profit after tax (PNL - Tax) for each month
+   - Include yearly totals
+   - Use proper naming convention (summary-{input_filename})
+   - Success criteria: Correctly formatted summary report showing profit by month and year
+   - ✅ Completed: The summary report is now generated as part of the output process
+
+8. **Testing and Validation**
    - Test with sample data
    - Verify calculations match expected outcomes
    - Success criteria: System produces correct results for test cases
 
 ## Project Status Board
 - [x] Requirements Documentation
-- [ ] Project Setup
-- [ ] Input Data Processing
-- [ ] Portfolio Management Logic
-- [ ] Trade Processing Logic
-- [ ] Profit/Loss and Tax Calculation
-- [ ] Output Generation
-- [ ] Testing and Validation
+- [x] Project Setup
+- [x] Input Data Processing
+- [x] Portfolio Management Logic
+- [x] Trade Processing Logic
+- [x] Profit/Loss and Tax Calculation
+- [x] Output Generation
+- [x] Monthly Summary Report Generation
+- [ ] Comprehensive Testing and Validation
 
 ## Executor's Feedback or Assistance Requests
-We have completed the comprehensive requirements documentation as requested. The document includes:
-- Detailed functional requirements
-- Non-functional requirements
-- System constraints
-- Assumptions and dependencies
-- Acceptance criteria
+We have successfully implemented the monthly profit summary feature. The new functionality:
+- Generates a CSV file with months as columns and years as rows
+- Shows profit after tax (PNL - Tax) for each month/year
+- Includes yearly totals
+- Uses the correct "summary-" prefix in the filename
+- Reads the tax output file as input for summary generation
 
-We've updated the requirements to include handling of blank lines in the input file - the system should stop reading upon encountering the first blank line and ignore any content after it.
+The implementation has been tested and is working as expected. The code has been updated in:
+- src/utils/output_generator.py: Added new functions for summary report generation
+- src/main.py: Updated to handle the new output files
 
-We are waiting for approval to begin implementation.
+Requirements.md has also been updated to include the new feature requirements.
 
 ## Lessons
 - Include corpus calculations and tax logic in debug output for easier verification
@@ -85,4 +97,6 @@ We are waiting for approval to begin implementation.
 - Ensure quantity calculations always round down to integers
 - Configuration values (X=2,000,000, N=20) should be read from a config file with defaults
 - Flag errors for invalid scenarios like having more than N stocks
-- Stop reading the input file at the first blank line 
+- Stop reading the input file at the first blank line
+- Use pandas for efficient data manipulation when generating summary reports
+- Make sure all months are present in summary reports even if there's no data for that month 
